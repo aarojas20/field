@@ -10,25 +10,25 @@ def make_df_meta(
     passes_per_treatment: int,
     tnames: list[str],
     effect_size: list[int],
-    treatment_sds_pct: list[int],
+    treatment_sds: list[int],
 ):
-    """_summary_
+    """Helper function to create df_meta
 
     Parameters
     ----------
     passes_per_treatment : int
-        _description_
+        The number of passes per treatment
     tnames : list[str]
-        _description_
+        Treatment names
     effect_size : list[int]
-        _description_
-    treatment_sds_pct : list[int]
-        _description_
+        Effect sizes
+    treatment_sds : list[int]
+        Absolute standard deviations for each treatment
 
     Returns
     -------
-    _type_
-        _description_
+    pd.DataFrame
+        Contains "treatmentname", "pass_no", "effect_size", and "sd"
     """
     return pd.DataFrame(
         {
@@ -40,7 +40,7 @@ def make_df_meta(
                 [[esize] * passes_per_treatment for esize in effect_size]
             ),
             "sd": itertools.chain.from_iterable(
-                [[sd] * passes_per_treatment for sd in treatment_sds_pct]
+                [[sd] * passes_per_treatment for sd in treatment_sds]
             ),
         }
     )
@@ -56,31 +56,31 @@ def make_dummy_block(
     effect_size: list[int] = [5, 0, 1],
     treatment_sds: list[float] = [1, 0.2, 0.15],
 ) -> pd.DataFrame:
-    """_summary_
+    """Make dummy data for an experiment block
 
     Parameters
     ----------
     passes_per_treatment : int, optional
-        _description_, by default 3
+        The number of passes per treatment, by default 3
     pass_width : int, optional
-        _description_, by default 5
+        The width of a single pass, by default 5
     buffer : int, optional
-        _description_, by default 5
+        The distance between treatments, by default 5
     pass_length : int, optional
-        _description_, by default 100
+        The length of a pass, by default 100
     points_per_pass : int, optional
-        _description_, by default 100
+        The number of points in a pass, by default 100
     tnames : list[str], optional
-        _description_, by default ["T1", "Control", "T2"]
+        Treatment names, by default ["T1", "Control", "T2"]
     effect_size : list[int], optional
-        _description_, by default [5, 0, 1]
+        Effect sizes, by default [5, 0, 1]
     treatment_sds : list[float], optional
-        _description_, by default [0.2, 0.2, 0.15]
+        Absolute standard deviations for each treatment, by default [0.2, 0.2, 0.15]
 
     Returns
     -------
     pd.DataFrame
-        _description_
+        Contains "treatmentname", "x_lon", "y_lat", and "value"
     """
     # first create df with meta-data
     df_meta = make_df_meta(passes_per_treatment, tnames, effect_size, treatment_sds)
@@ -110,25 +110,25 @@ def make_spatial_pattern(
     lin_cov=False,
     lin_cov_args={},
 ) -> np.ndarray:
-    """_summary_
+    """Make a spatial pattern
 
     Parameters
     ----------
     x : np.ndarray
-        _description_
+        Values in the x-direction
     y : np.ndarray
-        _description_
+        Values in the y-direction
     cov_fxn : callable, optional
         RBF (ExpQuad) kernel for 2D GP, by default pm.gp.cov.Exponential
     lin_cov : bool, optional
-        _description_
+        Flag to denote whether to use a linear covariance fxn
     lin_cov_args : dict, by default {}
         Contains arguments to pass to linear GP, ie {"c": `c`}
 
     Returns
     -------
     np.ndarray
-        _description_
+        Values for the spatial pattern
     """
     X, Y = np.meshgrid(x, y)
     coords = np.vstack([X.ravel(), Y.ravel()]).T
@@ -149,23 +149,23 @@ def make_spatial_pattern(
     return trace.prior["f"].values.reshape(len(x), len(y))
 
 
-def make_linear_pattern(x, y, c, cov_fxn=pm.gp.cov.Linear) -> np.ndarray:
-    """_summary_
+def make_linear_pattern(x: np.ndarray, y: np.ndarray, c: int, cov_fxn=pm.gp.cov.Linear) -> np.ndarray:
+    """Make a linear spatial pattern
 
     Parameters
     ----------
-    x : _type_
-        _description_
-    y : _type_
-        _description_
-    c : _type_
-        _description_
-    cov_fxn : _type_, optional
-        _description_, by default pm.gp.cov.Linear
+    x : np.ndarray
+        Values in the x-direction
+    y : np.ndarray
+        Values in the y-direction
+    c : int
+        The constant, `c`,  in the linear kernel, k(x, x') = (x - c)(x' - c)
+    cov_fxn : Covariance object, optional
+        The linear kernel object, by default pm.gp.cov.Linear
 
     Returns
     -------
     np.ndarray
-        _description_
+        Values for the spatial pattern
     """
     return make_spatial_pattern(x, y, cov_fxn=cov_fxn, lin_cov=True, lin_cov_args={"c": c})
