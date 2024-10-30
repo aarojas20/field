@@ -1,0 +1,11 @@
+name: pymc_env
+channels:
+  - conda-forge
+dependencies:
+  - blackjax
+  - ipykernel
+  - numpyro
+  - python=3.12
+  - pymc>=5
+  - pytest
+  - seaborn
